@@ -2,6 +2,8 @@
 #include <fstream>
 #include <gmp.h>
 #include <set>
+#include<cstring>
+#include<string>
 
 using namespace std;
 
@@ -105,8 +107,13 @@ int main(){
     cout<<"Give number of characters to compress at a time, bigger = more compresion\n";
     cin>>N;
     ifstream unCompressed (unCompressedFile);
-    ofstream compressed ("compressed.ins");
-    compressed << unCompressedFile << " "<< N <<"\n";
+    FILE * compressed;
+    compressed = fopen("compressed.ins", "w");
+    string header = unCompressedFile + " " + to_string(N) + "\n";
+    const char * char_array = header.c_str();
+
+    fputs(char_array, compressed);
+    //compressed << unCompressedFile << " "<< N <<"\n";
 
     char c;
     mpz_t asciiForm;
@@ -170,11 +177,21 @@ int main(){
             //cout << x << " "<< r <<"\n";
             //compressed << x << " "<< r <<"\n";
             //mpz_out_str(stdout,10,asciiForm);
-            mpz_out_str(stdout,10,x);
-            mpz_out_str(*compressed,10,x);
-            cout<<mpzToString(x)<<endl;
-            compressed << mpzToString(x)<< " "<< r <<"\n";
-            cout<<"\n";
+            mpz_clear(top);
+            mpz_clear(bot);
+            //mpz_out_str(stdout,10,x);
+            //cout<<"1";
+            mpz_out_str(compressed,10,x);
+            //mpz_get_str(out, 10, x);
+            //compressed << out<< " "<< r <<"\n";
+            header = " " + to_string(r);
+            char_array = header.c_str();
+            fputs(char_array, compressed);
+
+            string newLine = "\n";
+            char_array = newLine.c_str();
+            fputs(char_array, compressed);
+
             mpz_set_ui(asciiForm,0);
 
             counter = 0;
@@ -192,7 +209,8 @@ int main(){
 
 
     unCompressed.close();
-    compressed.close();
+    //compressed.close();
+    fclose(compressed);
     return 0;
 }
 
