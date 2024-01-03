@@ -51,7 +51,6 @@ bool checkSuccsfulXR (mpz_t x, int r, int scale, mpz_t goal){
 
 bool isXGreater(mpz_t x, int r, int scale, mpz_t goal){
     mpz_set(radicand,x);
-    mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
     mpz_mul(radicand, radicand, scaleUsable);
     mpz_root(radicand, radicand, r);
     /**mpz_out_str(stdout,10,radicand);
@@ -62,8 +61,7 @@ bool isXGreater(mpz_t x, int r, int scale, mpz_t goal){
     return mpz_cmp(radicand, goal) > 0;
 }
 
-void calcNewBot (mpz_t bot, int r){
-    int scale = 10;
+void calcNewBot (mpz_t bot, int r, int scale){
     mpz_set(radicand,bot);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
     mpz_mul(radicand, radicand, scaleUsable);
@@ -74,8 +72,7 @@ void calcNewBot (mpz_t bot, int r){
     mpz_set(bot, radicand);
 }
 
-void calcNewTop (mpz_t top, int r){
-    int scale = 10;
+void calcNewTop (mpz_t top, int r, int scale){
     mpz_set(radicand,top);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
     mpz_mul(radicand, radicand, scaleUsable);
@@ -98,7 +95,7 @@ int main(){
     cin>>N;
     ifstream unCompressed (unCompressedFile);
     FILE * compressed;
-    compressed = fopen("compressed.ins", "w");
+    compressed = fopen("compressed.ins", "wb");
     string header = unCompressedFile + " " + to_string(N) + "\n";
     const char * char_array = header.c_str();
 
@@ -122,7 +119,8 @@ int main(){
             mpz_init_set_ui(bot, calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10)));
             //cout<<calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10))<<endl;
             mpz_t top;
-            mpz_init_set_ui(top, mpz_get_ui(bot) + 1);
+            mpz_init(top);
+            mpz_add_ui(top, bot, 1);
             //cout<<bot<<" "<<top<<endl;
             int r = 2;
             mpz_t x;
@@ -140,9 +138,12 @@ int main(){
                 while (!flag && mpz_cmp(bot, top) <= 0){
                     mpz_add(mid, bot, top);
                     mpz_fdiv_q_ui(mid, mid, 2);
+                    if (mpz_sizeinbase(mid, 10)+1000 > 2147483647){
+                        cout<<"Error, mid to big";
+                        break;
+                    }
                     //cout<<top<<" "<<bot<<" "<<mid<<endl;
-                    //mpz_out_str(stdout,10,mid);
-                    //cout<<"\n";
+                    //cout<<endl<<mpz_sizeinbase(asciiForm, 10)<<endl;
                     //cout<<mpz_sizeinbase(mid, 10)<<endl;
                     if (checkSuccsfulXR(mid, r, mpz_sizeinbase(asciiForm, 10), asciiForm)){
                         flag = true;
@@ -153,18 +154,18 @@ int main(){
                         mpz_add_ui(bot, mid, 1);
                     }
                 }
-                mpz_add(mid, bot, top);
-                mpz_fdiv_q_ui(mid, mid, 2);
                 if (!flag){
-                    if (mpz_cmp(mid, top) < 0){
+                    if (mpz_cmp(mid, top) > 0){
                         mpz_set (bot, top);
                         mpz_set (top, mid);
                     } else {
                         mpz_set (top, bot);
                         mpz_set (bot, mid);
                     }
-                    calcNewTop(top, r);
-                    calcNewBot(bot, r);
+                    calcNewTop(top, r, mpz_sizeinbase(mid, 10)+1000);
+                    calcNewBot(bot, r, mpz_sizeinbase(mid, 10)+1000);
+                    // cout<< mpz_sizeinbase(mid, 10)<<endl;
+                    // cout<< mpz_sizeinbase(mid, 10)<<endl;
                     r++;
                 }
             }
@@ -177,16 +178,12 @@ int main(){
             //mpz_out_str(stdout,10,x);
             //cout<<endl;
             //cout<<"1";
-            mpz_out_str(compressed,62,x);
+            mpz_out_raw(compressed,x);
             //mpz_get_str(out, 10, x);
             //compressed << out<< " "<< r <<"\n";
-            header = " " + to_string(r);
-            char_array = header.c_str();
-            fputs(char_array, compressed);
 
-            string newLine = "\n";
-            char_array = newLine.c_str();
-            fputs(char_array, compressed);
+            int buffer[] = {r};
+            fwrite (buffer , sizeof(int), sizeof(buffer), compressed);
 
             mpz_set_ui(asciiForm,0);
             mpz_clear(x);
