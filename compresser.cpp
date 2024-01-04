@@ -51,6 +51,7 @@ bool checkSuccsfulXR (mpz_t x, int r, int scale, mpz_t goal){
 
 bool isXGreater(mpz_t x, int r, int scale, mpz_t goal){
     mpz_set(radicand,x);
+    mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
     mpz_mul(radicand, radicand, scaleUsable);
     mpz_root(radicand, radicand, r);
     /**mpz_out_str(stdout,10,radicand);
