@@ -42,10 +42,10 @@ bool checkSuccsfulXR (mpz_t x, int r, int scale, mpz_t goal){
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
     mpz_mul(radicand, radicand, scaleUsable);
     mpz_root(radicand, radicand, r);
-    /**mpz_out_str(stdout,10,radicand);
+    mpz_out_str(stdout,10,radicand);
     cout<<endl;
     mpz_out_str(stdout,10,goal);
-    cout<<endl;**/
+    cout<<endl;
     return  mpz_cmp(radicand, goal) == 0;
 }
 
@@ -86,6 +86,80 @@ void calcNewTop (mpz_t top, int r, int scale){
 
 //todo, test a run with size of 11200
 
+void calcIrrational(mpz_t asciiForm, FILE * compressed, int scale){
+    bool flag = false;
+    mpz_t bot;
+    mpz_init_set_ui(bot, calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10)));
+    //cout<<calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10))<<endl;
+    mpz_t top;
+    mpz_init(top);
+    mpz_add_ui(top, bot, 1);
+    //cout<<bot<<" "<<top<<endl;
+    int r = 2;
+    mpz_t x;
+    if (checkSuccsfulXR(bot, 2, mpz_sizeinbase(asciiForm, 10), asciiForm)){
+        flag = true;
+        mpz_init_set(x, bot);
+    }
+    if (checkSuccsfulXR(top, 2, mpz_sizeinbase(asciiForm, 10), asciiForm)){
+        flag = true;
+        mpz_init_set(x, top);
+    }
+    mpz_t mid;
+    mpz_init(mid);
+    while (!flag){
+        while (!flag && mpz_cmp(bot, top) <= 0){
+            mpz_add(mid, bot, top);
+            mpz_fdiv_q_ui(mid, mid, 2);
+            if (mpz_sizeinbase(mid, 10)+1000 > 2147483647){
+                cout<<"Error, mid to big";
+                    break;
+            }
+            //cout<<top<<" "<<bot<<" "<<mid<<endl;
+            //cout<<endl<<mpz_sizeinbase(asciiForm, 10)<<endl;
+            //cout<<mpz_sizeinbase(mid, 10)<<endl;
+        if (checkSuccsfulXR(mid, r, scale * 3, asciiForm)){
+                flag = true;
+                mpz_init_set(x, mid);
+            } else if (isXGreater(mid, r, scale * 3, asciiForm)){
+                    mpz_sub_ui(top, mid, 1);
+        } else {
+                mpz_add_ui(bot, mid, 1);
+            }
+        }
+        if (!flag){
+                if (mpz_cmp(mid, top) > 0){
+            mpz_set (bot, top);
+                mpz_set (top, mid);
+            } else {
+                    mpz_set (top, bot);
+                mpz_set (bot, mid);
+            }
+            calcNewTop(top, r, mpz_sizeinbase(mid, 10)+1000);
+            calcNewBot(bot, r, mpz_sizeinbase(mid, 10)+1000);
+            // cout<< mpz_sizeinbase(mid, 10)<<endl;
+            // cout<< mpz_sizeinbase(mid, 10)<<endl;
+            r++;
+        }
+    }
+    mpz_clear(mid);
+    //cout << x << " "<< r <<"\n";
+    //compressed << x << " "<< r <<"\n";
+    //mpz_out_str(stdout,10,asciiForm);
+    mpz_clear(top);
+    mpz_clear(bot);
+    //mpz_out_str(stdout,10,x);
+    //cout<<endl;
+    //cout<<"1";
+    mpz_out_raw(compressed,x);
+    //mpz_get_str(out, 10, x);
+    //compressed << out<< " "<< r <<"\n";
+    int buffer[] = {r};
+    fwrite (buffer , sizeof(int), sizeof(buffer), compressed);
+
+    mpz_clear(x);
+}
+
 int main(){
     mpz_inits(result, radicand, scaleUsable);
     string unCompressedFile;
@@ -115,79 +189,8 @@ int main(){
         mpz_mul_ui(asciiForm, asciiForm, 1000);
         mpz_add_ui(asciiForm, asciiForm, c + 100);
         if (counter == N){
-            bool flag = false;
-            mpz_t bot;
-            mpz_init_set_ui(bot, calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10)));
-            //cout<<calcInitBottom(asciiForm, mpz_sizeinbase(asciiForm, 10))<<endl;
-            mpz_t top;
-            mpz_init(top);
-            mpz_add_ui(top, bot, 1);
-            //cout<<bot<<" "<<top<<endl;
-            int r = 2;
-            mpz_t x;
-            if (checkSuccsfulXR(bot, 2, mpz_sizeinbase(asciiForm, 10), asciiForm)){
-                flag = true;
-                mpz_init_set(x, bot);
-            }
-            if (checkSuccsfulXR(top, 2, mpz_sizeinbase(asciiForm, 10), asciiForm)){
-                flag = true;
-                mpz_init_set(x, top);
-            }
-            mpz_t mid;
-            mpz_init(mid);
-            while (!flag){
-                while (!flag && mpz_cmp(bot, top) <= 0){
-                    mpz_add(mid, bot, top);
-                    mpz_fdiv_q_ui(mid, mid, 2);
-                    if (mpz_sizeinbase(mid, 10)+1000 > 2147483647){
-                        cout<<"Error, mid to big";
-                        break;
-                    }
-                    //cout<<top<<" "<<bot<<" "<<mid<<endl;
-                    //cout<<endl<<mpz_sizeinbase(asciiForm, 10)<<endl;
-                    //cout<<mpz_sizeinbase(mid, 10)<<endl;
-                    if (checkSuccsfulXR(mid, r, mpz_sizeinbase(asciiForm, 10), asciiForm)){
-                        flag = true;
-                        mpz_init_set(x, mid);
-                    } else if (isXGreater(mid, r, mpz_sizeinbase(asciiForm, 10), asciiForm)){
-                        mpz_sub_ui(top, mid, 1);
-                    } else {
-                        mpz_add_ui(bot, mid, 1);
-                    }
-                }
-                if (!flag){
-                    if (mpz_cmp(mid, top) > 0){
-                        mpz_set (bot, top);
-                        mpz_set (top, mid);
-                    } else {
-                        mpz_set (top, bot);
-                        mpz_set (bot, mid);
-                    }
-                    calcNewTop(top, r, mpz_sizeinbase(mid, 10)+1000);
-                    calcNewBot(bot, r, mpz_sizeinbase(mid, 10)+1000);
-                    // cout<< mpz_sizeinbase(mid, 10)<<endl;
-                    // cout<< mpz_sizeinbase(mid, 10)<<endl;
-                    r++;
-                }
-            }
-            mpz_clear(mid);
-            //cout << x << " "<< r <<"\n";
-            //compressed << x << " "<< r <<"\n";
-            //mpz_out_str(stdout,10,asciiForm);
-            mpz_clear(top);
-            mpz_clear(bot);
-            //mpz_out_str(stdout,10,x);
-            //cout<<endl;
-            //cout<<"1";
-            mpz_out_raw(compressed,x);
-            //mpz_get_str(out, 10, x);
-            //compressed << out<< " "<< r <<"\n";
-
-            int buffer[] = {r};
-            fwrite (buffer , sizeof(int), sizeof(buffer), compressed);
-
+            calcIrrational(asciiForm, compressed, counter);
             mpz_set_ui(asciiForm,0);
-            mpz_clear(x);
 
             counter = 0;
         }
@@ -201,6 +204,10 @@ int main(){
     //checkSuccsfulXR(3, 2, mpz_sizeinbase(asciiForm, 10), asciiForm);
 
     cout << endl<<mpzToString(asciiForm);
+    if (counter > 0){
+        calcIrrational(asciiForm, compressed, counter);
+        mpz_set_ui(asciiForm,0);
+    }
 
 
     unCompressed.close();
