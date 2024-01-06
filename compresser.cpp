@@ -31,29 +31,29 @@ mpz_t scaleUsable;
 
 unsigned int calcInitBottom (mpz_t in, int scale){
     mpz_set(result, in);
-    mpz_mul(result, result, result);
+    mpz_mul(radicand, result, result);
     mpz_ui_pow_ui(scaleUsable, 10, 2*(scale-1));
-    mpz_fdiv_q(result, result, scaleUsable);
+    mpz_fdiv_q(result, radicand, scaleUsable);
     return mpz_get_si(result);
 }
 
 bool checkSuccsfulXR (mpz_t x, int r, int scale, mpz_t goal){
     mpz_set(radicand,x);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
-    mpz_mul(radicand, radicand, scaleUsable);
-    mpz_root(radicand, radicand, r);
-    mpz_out_str(stdout,10,radicand);
+    mpz_mul(result, radicand, scaleUsable);
+    mpz_root(radicand, result, r);
+    /**mpz_out_str(stdout,10,radicand);
     cout<<endl;
     mpz_out_str(stdout,10,goal);
-    cout<<endl;
+    cout<<endl;**/
     return  mpz_cmp(radicand, goal) == 0;
 }
 
 bool isXGreater(mpz_t x, int r, int scale, mpz_t goal){
     mpz_set(radicand,x);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
-    mpz_mul(radicand, radicand, scaleUsable);
-    mpz_root(radicand, radicand, r);
+    mpz_mul(result, radicand, scaleUsable);
+    mpz_root(radicand, result, r);
     /**mpz_out_str(stdout,10,radicand);
     cout<<endl;
     mpz_out_str(stdout,10,goal);
@@ -65,22 +65,22 @@ bool isXGreater(mpz_t x, int r, int scale, mpz_t goal){
 void calcNewBot (mpz_t bot, int r, int scale){
     mpz_set(radicand,bot);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
-    mpz_mul(radicand, radicand, scaleUsable);
-    mpz_root(radicand, radicand, r);
-    mpz_mul(radicand, radicand, bot);
+    mpz_mul(result, radicand, scaleUsable);
+    mpz_root(radicand, result, r);
+    mpz_mul(result, radicand, bot);
     mpz_ui_pow_ui(scaleUsable, 10, (scale-1));
-    mpz_fdiv_q(radicand, radicand, scaleUsable);
+    mpz_fdiv_q(radicand, result, scaleUsable);
     mpz_set(bot, radicand);
 }
 
 void calcNewTop (mpz_t top, int r, int scale){
     mpz_set(radicand,top);
     mpz_ui_pow_ui(scaleUsable, 10, r*(scale-1));
-    mpz_mul(radicand, radicand, scaleUsable);
-    mpz_root(radicand, radicand, r);
-    mpz_mul(radicand, radicand, top);
+    mpz_mul(result, radicand, scaleUsable);
+    mpz_root(radicand, result, r);
+    mpz_mul(result, radicand, top);
     mpz_ui_pow_ui(scaleUsable, 10, (scale-1));
-    mpz_cdiv_q(radicand, radicand, scaleUsable);
+    mpz_cdiv_q(radicand, result, scaleUsable);
     mpz_set(top, radicand);
 }
 
@@ -128,15 +128,15 @@ void calcIrrational(mpz_t asciiForm, FILE * compressed, int scale){
             }
         }
         if (!flag){
-                if (mpz_cmp(mid, top) > 0){
-            mpz_set (bot, top);
+            if (mpz_cmp(mid, top) > 0){
+                mpz_set (bot, top);
                 mpz_set (top, mid);
             } else {
-                    mpz_set (top, bot);
+                mpz_set (top, bot);
                 mpz_set (bot, mid);
             }
-            calcNewTop(top, r, mpz_sizeinbase(mid, 10)+1000);
-            calcNewBot(bot, r, mpz_sizeinbase(mid, 10)+1000);
+            calcNewTop(top, r, mpz_sizeinbase(mid, 10)+1);
+            calcNewBot(bot, r, mpz_sizeinbase(mid, 10)+1);
             // cout<< mpz_sizeinbase(mid, 10)<<endl;
             // cout<< mpz_sizeinbase(mid, 10)<<endl;
             r++;
@@ -151,13 +151,16 @@ void calcIrrational(mpz_t asciiForm, FILE * compressed, int scale){
     //mpz_out_str(stdout,10,x);
     //cout<<endl;
     //cout<<"1";
-    mpz_out_raw(compressed,x);
+    mpz_out_str(compressed, 62,x);
     //mpz_get_str(out, 10, x);
     //compressed << out<< " "<< r <<"\n";
     int buffer[] = {r};
-    fwrite (buffer , sizeof(int), sizeof(buffer), compressed);
+    const char * char_array = (" "+to_string(r) + "\n").c_str();
+    fputs(char_array, compressed);
+    //fwrite (buffer , sizeof(int), sizeof(buffer), compressed);
 
     mpz_clear(x);
+    cout<<"1 done"<<endl;
 }
 
 int main(){
